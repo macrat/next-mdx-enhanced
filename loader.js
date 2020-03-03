@@ -123,11 +123,18 @@ async function processLayout(options, frontMatter, content, resourcePath, scans)
     })
   }
 
+  const exportFrontmatter = pluginOpts.exportFrontmatterAs ? (
+    `export const ${pluginOpts.exportFrontmatterAs} = ${stringifyObject(mergedFrontMatter)}`
+  ) : "";
+
   // Import the layout, export the layout-wrapped content, pass front matter into layout
   return `import layout from '${normalizeToUnixPath(layoutPath)}'
 
 export default layout(${stringifyObject(mergedFrontMatter)})
 
+${exportFrontmatter}
+
 ${content}
 `
 }
+
