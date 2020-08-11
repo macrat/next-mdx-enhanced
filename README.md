@@ -35,7 +35,7 @@ Install the package:
 $ npm install next-mdx-enhanced
 ```
 
-Open the `.gitgnore` file and add the `.mdx-data` diretory:
+Open the `.gitgnore` file and add the `.mdx-data` directory:
 
 ```shell
 # .gitignore
@@ -162,6 +162,7 @@ The template, defined in `layouts/docs-page.jsx`, looks like the following:
 ```jsx
 export default function Layout(frontMatter) {
   return ({ children: content }) => {
+    // React hooks, for example `useState` or `useEffect`, go here.
     return (
       <div>
         <h1>{frontMatter.title}</h1>
@@ -292,10 +293,11 @@ withMdxEnhanced({
     {
       someImportantKey: {
         pattern: /<SomeComponent.*name=['"](.*)['"].*\/>/,
-        transform: arr => arr[1] // Optionally get a specific value back via a function;
+        transform: (arr) => arr[1], // Optionally get a specific value back via a function;
         // if `transform` is omitted, any and all matches will be returned in an array
-    }
-  ]
+      },
+    },
+  ],
 })
 ```
 
