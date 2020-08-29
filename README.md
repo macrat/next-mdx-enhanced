@@ -60,10 +60,12 @@ module.exports = withMdxEnhanced({
   fileExtensions: ['mdx'],
   remarkPlugins: [],
   rehypePlugins: [],
+  usesSrc: false,
   extendFrontMatter: {
     process: (mdxContent, frontMatter) => {},
     phase: 'prebuild|loader|both',
   },
+  reExportDataFetching: false,
 })(/* your normal nextjs config */)
 ```
 
@@ -97,6 +99,12 @@ Array of [remark plugins](https://mdxjs.com/advanced/plugins#using-remark-and-re
 
 Array of [rehype plugins](https://mdxjs.com/advanced/plugins#using-remark-and-rehype-plugins) used to transform `.mdx` files.
 
+### usesSrc
+
+> `boolean` | optional | **default: `checks for src/pages to set the flag`**
+
+It dictates if next mdx enhanced should use the src/pages for looking for the pages' folder. Otherwise, it will use the pages in the top-level directory. Also, if not set, it automatically checks for the src/pages directories.
+
 ### extendFrontMatter
 
 > `object` | optional
@@ -127,6 +135,12 @@ This function runs on each build of an MDX page. All metadata and full text cont
 
 > Useful for indexing your content for site search or any other purpose where
 > you'd like to capture content on build.
+
+### reExportDataFetching
+
+> `boolean` | optional
+
+If you export `getStaticProps` and/or `getServerSideProps` from your layout, and wish for those to be re-exported from each of your mdx pages, set this option to `true`.
 
 ## Layouts
 
@@ -160,16 +174,15 @@ The file extension of the template must be one of configured [pageExtensions](ht
 The template, defined in `layouts/docs-page.jsx`, looks like the following:
 
 ```jsx
-export default function Layout(frontMatter) {
-  return ({ children: content }) => {
-    // React hooks, for example `useState` or `useEffect`, go here.
-    return (
-      <div>
-        <h1>{frontMatter.title}</h1>
-        {content}
-      </div>
-    )
-  }
+// This function must be named otherwise it disables Fast Refresh.
+export default function DocsPage({ children, frontMatter }) {
+  // React hooks, for example `useState` or `useEffect`, go here.
+  return (
+    <div>
+      <h1>{frontMatter.title}</h1>
+      {children}
+    </div>
+  )
 }
 ```
 

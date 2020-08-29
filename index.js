@@ -3,7 +3,7 @@ const matter = require('gray-matter')
 const path = require('path')
 const PrebuildWebpackPlugin = require('prebuild-webpack-plugin')
 const { generateFrontmatterPath, extendFrontMatter } = require('./util')
-const babelPluginFrontmatter = require('./babelPlugin')
+const babelPluginFrontmatter = require('./babel-plugin-extract-frontmatter')
 const debug = require('debug')('next-mdx-enhanced')
 
 module.exports = (pluginOptions = {}) => (nextConfig = {}) => {
@@ -30,6 +30,10 @@ module.exports = (pluginOptions = {}) => (nextConfig = {}) => {
   ) {
     pluginOptions.extendFrontMatter.phase = 'both'
   }
+
+  if (!pluginOptions.usesSrc) pluginOptions.usesSrc = fs.existsSync(`src/pages`);
+
+  pluginOptions.pagesDir = pluginOptions.usesSrc? `src/pages` : `pages`;
 
   return Object.assign({}, nextConfig, {
     webpack(config, options) {
@@ -73,8 +77,8 @@ module.exports = (pluginOptions = {}) => (nextConfig = {}) => {
           files: {
             pattern:
               pluginOptions.fileExtensions.length > 1
-                ? `pages/**/*.{${pluginOptions.fileExtensions.join(',')}}`
-                : `pages/**/*.${pluginOptions.fileExtensions[0]}`,
+                ? `${pluginOptions.pagesDir}/**/*.{${pluginOptions.fileExtensions.join(',')}}`
+                : `${pluginOptions.pagesDir}/**/*.${pluginOptions.fileExtensions[0]}`,
             options: { cwd: config.context },
             addFilesAsDependencies: true,
           },
@@ -91,9 +95,16 @@ module.exports = (pluginOptions = {}) => (nextConfig = {}) => {
   })
 }
 
-// Given an array of absolute file paths, write out the front matter to a json file
-async function extractFrontMatter(pluginOptions, files, root) {
+// Given an array of file paths, write out the front matter to a json file
+async function extractFrontMatter(
+  pluginOptions,
+  absoluteOrRelativeFilePaths,
+  root
+) {
   debug('start: read all mdx files')
+  const files = absoluteOrRelativeFilePaths.map((filePath) =>
+    path.isAbsolute(filePath) ? filePath : path.resolve(root, filePath)
+  )
   const fileContents = await Promise.all(
     files.map((f) => fs.readFile(f, 'utf8'))
   )
@@ -103,7 +114,7 @@ async function extractFrontMatter(pluginOptions, files, root) {
   const frontMatter = await Promise.all(
     fileContents.map(async (content, idx) => {
       const __resourcePath = files[idx]
-        .replace(path.join(root, 'pages'), '')
+        .replace(path.join(root, pluginOptions.pagesDir), '')
         .substring(1)
 
       const { data } = matter(content, {
@@ -137,7 +148,7 @@ async function extractFrontMatter(pluginOptions, files, root) {
   debug('start: write data files')
   return Promise.all(
     frontMatter.map((content, idx) => {
-      fs.writeFile(fmPaths[idx], JSON.stringify(content))
+      return fs.writeFile(fmPaths[idx], JSON.stringify(content))
     })
   ).then(() => {
     debug('finish: write data files')
